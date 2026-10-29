@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f8f7f2">
+  <meta name="description" content="Discover, save and share your favorite recipes with Tastebuds.">
+  <title>Tastebuds — Recipes worth sharing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#" aria-label="Tastebuds home"><span class="brand-mark">✳</span> tastebuds<span class="brand-dot">.</span></a>
+  <nav class="desktop-nav"><a href="#discover" class="nav-link active">Discover</a><a href="#categories" class="nav-link">Categories</a><a href="#community" class="nav-link">Community</a></nav>
+  <div class="header-actions"><button id="favoritesNav" class="text-button">♡ Saved</button><button id="addNav" class="button button-dark">＋ Share recipe</button><button id="accountNav" class="avatar" title="Account">👤</button></div>
+</header>
+<main>
+  <section class="hero" id="discover">
+    <div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span> GOOD FOOD, GOOD MOOD</div>
+      <h1>Find your next<br><em>favorite</em> bite.</h1>
+      <p class="hero-sub">A little inspiration for whatever’s cooking. Discover recipes, save the good ones, and share what you love.</p>
+      <div class="hero-search"><span>⌕</span><input id="searchInput" type="search" placeholder="Try “creamy pasta” or “quick lunch”"><button id="searchBtn" aria-label="Search">→</button></div>
+      <div class="hero-foot"><div class="mini-avatars"><span>👩🏽</span><span>👨🏻</span><span>👩🏼</span><span>👨🏾</span></div><span><strong>Made by home cooks.</strong> Loved by everyone.</span></div>
+    </div>
+    <div class="hero-art"><img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1400&q=90" alt="Fresh colorful food in a bowl"><div class="floating-note"><span class="note-icon">✦</span><div><strong>A fresh kind of inspiration</strong><small>Your next kitchen win starts here.</small></div></div><div class="hero-sticker">made<br>with <span>♥</span></div></div>
+  </section>
+  <section class="section categories-section" id="categories"><div class="section-heading"><div><div class="eyebrow">WHAT ARE YOU CRAVING?</div><h2>A recipe for every <em>mood.</em></h2></div><button id="clearCategory" class="text-button">View all recipes ↗</button></div>
+    <div class="category-list">
+      <button class="category-chip selected" data-category=""><span>🍽️</span> All recipes</button><button class="category-chip" data-category="Breakfast"><span>🍳</span> Breakfast</button><button class="category-chip" data-category="Lunch"><span>🥑</span> Lunch</button><button class="category-chip" data-category="Dinner"><span>🍝</span> Dinner</button><button class="category-chip" data-category="Healthy"><span>🥗</span> Healthy</button><button class="category-chip" data-category="Dessert"><span>🍓</span> Dessert</button>
+    </div>
+  </section>
+  <section class="section recipes-section"><div class="section-heading recipe-heading"><div><div class="eyebrow" id="recipeEyebrow">FRESH FROM THE COMMUNITY</div><h2 id="recipeTitle">Today’s <em>inspiration.</em></h2></div><div class="filters"><select id="difficultyFilter" aria-label="Filter by difficulty"><option value="">Any difficulty</option><option>Easy</option><option>Medium</option><option>Hard</option></select><select id="sortFilter" aria-label="Sort recipes"><option value="newest">Most recent</option><option value="popular">Most loved</option></select></div></div>
+    <div id="recipeGrid" class="recipe-grid"><div class="loading">Gathering something delicious…</div></div>
+    <div id="emptyState" class="empty-state hidden"><div>🥣</div><h3>No recipes found just yet</h3><p>Try another search or be the first to share a recipe.</p><button class="button button-dark" id="emptyAdd">Share a recipe</button></div>
+  </section>
+  <section class="community-banner" id="community"><div class="banner-spark">✳</div><div><div class="eyebrow">YOUR KITCHEN, YOUR STORY</div><h2>Every great recipe has<br>a story. <em>Share yours.</em></h2><p>Pass on the little tricks, the family favorites, and the happy accidents.</p></div><button class="button button-light" id="bannerAdd">Share your recipe <span>↗</span></button><div class="banner-decoration">yum!</div></section>
+</main>
+<footer><a class="brand" href="#"><span class="brand-mark">✳</span> tastebuds<span class="brand-dot">.</span></a><p>Made for the love of good food. <span>© 2026 Tastebuds</span></p><a href="#discover">Back to top ↑</a></footer>
+<div id="modalRoot"></div><div id="toast" role="status" class="toast"></div>
+<script src="/app.js"></script>
+</body></html>
