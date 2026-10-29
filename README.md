@@ -75,3 +75,4 @@ git branch -M main
 git remote add origin https://github.com/YOUR_USERNAME/recipe-sharing-website.git
 git push -u origin main
 ```
+Git practical demonstration: Basic Git commands implemented successfully.
