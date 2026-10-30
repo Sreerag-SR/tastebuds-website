@@ -127,14 +127,29 @@ function recipeView(recipe, viewerId = 0) {
     author: db.prepare("SELECT name FROM users WHERE id=?").get(recipe.user_id)?.name || "Home cook",
     likes, comments, favorite, liked };
 }
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_, __, cb) => cb(null, UPLOAD_DIR),
-    filename: (_, file, cb) => cb(null, Date.now() + "-" + file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_"))
+    filename: (_, file, cb) =>
+      cb(null, Date.now() + "-" + file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_"))
   }),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => cb(null, /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype))
+  fileFilter: (_, file, cb) =>
+    cb(null, /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype))
 });
+
+// Image upload API
+app.post("/api/upload", auth, upload.single("image"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "Please select a valid image." });
+  }
+
+  res.status(201).json({
+    image_url: `/uploads/${req.file.filename}`
+  });
+});
+
 
 app.post("/api/auth/register", (req, res) => {
   const { name, email, password } = req.body || {};

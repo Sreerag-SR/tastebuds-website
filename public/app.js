@@ -18,8 +18,36 @@ async function api(url, options={}) {
   if(!response.ok) throw new Error(data.error || "Something went wrong.");
   return data;
 }
+
+async function uploadRecipeImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Image upload failed.");
+  }
+
+  return data.image_url;
+}
+
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2600);}
-function imageFor(r){return r.image_url || fallbackImages[r.category] || fallbackImages.Dinner;}
+function imageFor(r){
+    const url = r.image_url?.trim();
+
+    if (url) {
+        return url;
+    }
+
+    return fallbackImages[r.category] || fallbackImages.Dinner;
+}
 function openModal(content, wide=false){$("#modalRoot").innerHTML=`<div class="modal-backdrop" id="modalBackdrop"><section class="modal ${wide?"wide":""}" role="dialog" aria-modal="true">${content}</section></div>`;$("#modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal();});document.addEventListener("keydown",escModal,{once:true});}
 function escModal(e){if(e.key==="Escape")closeModal();}
 function closeModal(){$("#modalRoot").innerHTML="";}
@@ -42,7 +70,7 @@ function renderRecipes(){
   if(!state.recipes.length)return;
   for(const r of state.recipes){
     const card=document.createElement("article");card.className="recipe-card";
-    card.innerHTML=`<div class="recipe-image-wrap" data-open="${r.id}"><img class="recipe-image" src="${esc(imageFor(r))}" alt="${esc(r.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'"><span class="recipe-category">${esc(r.category)}</span><button class="save-button ${r.favorite?"saved":""}" data-favorite="${r.id}" aria-label="Save recipe">${r.favorite?"♥":"♡"}</button></div><div class="recipe-info" data-open="${r.id}"><div class="recipe-meta"><span>✦ ${esc(r.difficulty)}</span><span>◷ ${Number(r.cooking_time)} min</span></div><h3>${esc(r.title)}</h3><p>${esc(r.description)}</p><div class="card-bottom"><span class="author"><span class="author-dot">✿</span>${esc(r.author||"Home cook")}</span><span class="like-count">♡ ${r.likes||0} likes</span></div></div>`;
+    card.innerHTML=`<div class="recipe-image-wrap" data-open="${r.id}"><img class="recipe-image" src="${esc(imageFor(r))}" alt="${esc(r.title)}" loading="lazy" onerror="this.onerror=null; this.classList.add('image-error'); this.removeAttribute('src');"><span class="recipe-category">${esc(r.category)}</span><button class="save-button ${r.favorite?"saved":""}" data-favorite="${r.id}" aria-label="Save recipe">${r.favorite?"♥":"♡"}</button></div><div class="recipe-info" data-open="${r.id}"><div class="recipe-meta"><span>✦ ${esc(r.difficulty)}</span><span>◷ ${Number(r.cooking_time)} min</span></div><h3>${esc(r.title)}</h3><p>${esc(r.description)}</p><div class="card-bottom"><span class="author"><span class="author-dot">✿</span>${esc(r.author||"Home cook")}</span><span class="like-count">♡ ${r.likes||0} likes</span></div></div>`;
     grid.appendChild(card);
   }
   $$("[data-open]",grid).forEach(el=>el.addEventListener("click",()=>openRecipe(Number(el.dataset.open))));
@@ -68,12 +96,123 @@ function showAuth(tab="login"){
   $("#loginTab").onclick=()=>showAuth("login");$("#registerTab").onclick=()=>showAuth("register");
   $("#authForm").onsubmit=async e=>{e.preventDefault();const body=Object.fromEntries(new FormData(e.target));try{const d=await api(`/api/auth/${login?"login":"register"}`,{method:"POST",body:JSON.stringify(body)});state.token=d.token;state.user=d.user;localStorage.setItem("tastebuds_token",d.token);closeModal();renderAccountButton();toast(`Welcome${state.user.name?`, ${state.user.name.split(" ")[0]}`:""}!`);await loadRecipes();}catch(err){$("#authError").textContent=err.message;}};
 }
-function showRecipeForm(recipe=null){
-  if(!state.user)return showAuth("login");
-  const r=recipe||{};
-  openModal(`${modalHead("FROM YOUR KITCHEN",r.id?"Edit your recipe":"Share something delicious")}<form id="recipeForm"><div class="form-grid"><div class="field full"><label>Recipe title *</label><input name="title" maxlength="100" value="${esc(r.title||"")}" placeholder="Grandma’s Sunday pasta" required></div><div class="field full"><label>A little introduction *</label><textarea name="description" maxlength="400" placeholder="What makes this dish special?" required>${esc(r.description||"")}</textarea></div><div class="field"><label>Category *</label><select name="category" required>${["Breakfast","Lunch","Dinner","Healthy","Dessert","Snack","Drinks"].map(c=>`<option ${r.category===c?"selected":""}>${c}</option>`).join("")}</select></div><div class="field"><label>Difficulty</label><select name="difficulty">${["Easy","Medium","Hard"].map(c=>`<option ${r.difficulty===c?"selected":""}>${c}</option>`).join("")}</select></div><div class="field"><label>Cooking time (minutes)</label><input type="number" name="cooking_time" min="1" max="1440" value="${Number(r.cooking_time)||30}" required></div><div class="field"><label>Photo URL (optional)</label><input type="url" name="image_url" value="${esc(r.image_url||"")}" placeholder="https://…"></div><div class="field full"><label>Ingredients * (one per line)</label><textarea name="ingredients" placeholder="2 cups flour&#10;1 tbsp olive oil" required>${esc(Array.isArray(r.ingredients)?r.ingredients.join("\n"):r.ingredients||"")}</textarea></div><div class="field full"><label>Steps * (one per line, in order)</label><textarea name="steps" placeholder="Preheat the oven…&#10;Mix the ingredients…" required>${esc(Array.isArray(r.steps)?r.steps.join("\n"):r.steps||"")}</textarea></div></div><div id="recipeError" class="form-error"></div><button class="button button-dark" style="width:100%">${r.id?"Save changes":"Publish recipe"} ↗</button></form><p class="form-hint" style="margin-top:12px">Tip: use one line per ingredient and one line per cooking step.</p>`,true);
-  $("#recipeForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));try{await api(r.id?`/api/recipes/${r.id}`:"/api/recipes",{method:r.id?"PUT":"POST",body:JSON.stringify(b)});closeModal();toast(r.id?"Recipe updated!":"Your recipe is live!");state.favoritesOnly=false;await loadRecipes();}catch(err){$("#recipeError").textContent=err.message;}};
+
+function showRecipeForm(recipe=null) {
+  if (!state.user) return showAuth("login");
+
+  const r = recipe || {};
+
+  openModal(`${modalHead("FROM YOUR KITCHEN", r.id ? "Edit your recipe" : "Share something delicious")}
+    <form id="recipeForm">
+      <div class="form-grid">
+
+        <div class="field full">
+          <label>Recipe title *</label>
+          <input name="title" maxlength="100"
+            value="${esc(r.title || "")}"
+            placeholder="Grandma’s Sunday pasta" required>
+        </div>
+
+        <div class="field full">
+          <label>A little introduction *</label>
+          <textarea name="description" maxlength="400"
+            placeholder="What makes this dish special?" required>${esc(r.description || "")}</textarea>
+        </div>
+
+        <div class="field">
+          <label>Category *</label>
+          <select name="category" required>
+            ${["Breakfast","Lunch","Dinner","Healthy","Dessert","Snack","Drinks"].map(c =>
+              `<option ${r.category === c ? "selected" : ""}>${c}</option>`
+            ).join("")}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Difficulty</label>
+          <select name="difficulty">
+            ${["Easy","Medium","Hard"].map(c =>
+              `<option ${r.difficulty === c ? "selected" : ""}>${c}</option>`
+            ).join("")}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Cooking time (minutes)</label>
+          <input type="number" name="cooking_time"
+            min="1" max="1440"
+            value="${Number(r.cooking_time) || 30}" required>
+        </div>
+
+        <div class="field">
+          <label>Recipe photo</label>
+          <input type="file" id="recipeImage" name="image_file"
+            accept="image/jpeg,image/png,image/webp,image/gif">
+          <small class="form-hint">
+            Choose JPG, PNG, WEBP or GIF. Maximum 5 MB.
+          </small>
+          ${r.image_url ? '<small class="form-hint">Your current photo will remain unless you choose a new one.</small>' : ""}
+        </div>
+
+        <div class="field full">
+          <label>Ingredients * (one per line)</label>
+          <textarea name="ingredients"
+            placeholder="2 cups flour&#10;1 tbsp olive oil"
+            required>${esc(Array.isArray(r.ingredients) ? r.ingredients.join("\n") : r.ingredients || "")}</textarea>
+        </div>
+
+        <div class="field full">
+          <label>Steps * (one per line, in order)</label>
+          <textarea name="steps"
+            placeholder="Preheat the oven…&#10;Mix the ingredients…"
+            required>${esc(Array.isArray(r.steps) ? r.steps.join("\n") : r.steps || "")}</textarea>
+        </div>
+
+      </div>
+
+      <div id="recipeError" class="form-error"></div>
+
+      <button class="button button-dark" style="width:100%">
+        ${r.id ? "Save changes" : "Publish recipe"} ↗
+      </button>
+    </form>
+
+    <p class="form-hint" style="margin-top:12px">
+      Tip: use one line per ingredient and one line per cooking step.
+    </p>
+  `, true);
+
+  $("#recipeForm").onsubmit = async e => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const file = formData.get("image_file");
+    formData.delete("image_file");
+
+    const b = Object.fromEntries(formData);
+    b.image_url = r.image_url || "";
+
+    try {
+      if (file && file.size > 0) {
+        b.image_url = await uploadRecipeImage(file);
+      }
+
+      await api(r.id ? `/api/recipes/${r.id}` : "/api/recipes", {
+        method: r.id ? "PUT" : "POST",
+        body: JSON.stringify(b)
+      });
+
+      closeModal();
+      toast(r.id ? "Recipe updated!" : "Your recipe is live!");
+      state.favoritesOnly = false;
+      await loadRecipes();
+
+    } catch (err) {
+      $("#recipeError").textContent = err.message;
+    }
+  };
 }
+
 async function showAdmin(){
   if(!state.user||state.user.role!=="admin")return;
   try{const s=await api("/api/admin/stats");openModal(`${modalHead("CONTROL ROOM","Community dashboard")}<div class="stats-grid"><div class="stat"><strong>${s.users}</strong><span>Members</span></div><div class="stat"><strong>${s.recipes}</strong><span>Recipes</span></div><div class="stat"><strong>${s.comments}</strong><span>Comments</span></div></div><div class="detail-block"><h3>Recent members</h3>${s.recentUsers.map(u=>`<div class="admin-user"><div><strong>${esc(u.name)}</strong><small>${esc(u.email)} · ${esc(u.role)}</small></div>${u.id!==state.user.id?`<button class="danger" data-remove-user="${u.id}">Remove</button>`:""}</div>`).join("")}</div><div class="detail-actions"><button class="button-outline" id="adminRecipes">Manage recipes</button></div>`,true);
